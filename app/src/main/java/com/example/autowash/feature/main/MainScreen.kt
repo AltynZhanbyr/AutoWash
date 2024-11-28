@@ -26,9 +26,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autowash.R
+import com.example.autowash.feature.booking.navigateToBookingScreen
 import com.example.autowash.ui.component.BasicButton
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
+import com.example.autowash.util.LocalNavHost
 
 @Composable
 fun MainScreen() {
@@ -37,6 +39,7 @@ fun MainScreen() {
             .fillMaxSize()
     ) { paddingValues ->
         val colors = LocalColors.current
+        val localNavHost = LocalNavHost.current
 
         Box(
             modifier = Modifier
@@ -83,7 +86,7 @@ fun MainScreen() {
                         horizontal = 10.dp
                     ),
                     onClick = {
-
+                        localNavHost.navigateToBookingScreen()
                     }
                 )
             }
