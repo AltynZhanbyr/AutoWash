@@ -16,6 +16,9 @@ kotlinxSerialization = "1.7.2"
 
 datastoreVer = "1.1.1"
 
+mapsVer = "4.9.0-lite"
+jetbrainsKotlinJvm = "2.0.0"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -37,7 +40,9 @@ material = { group = "com.google.android.material", name = "material", version.r
 compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastoreVer"}
+datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastoreVer" }
+
+maps-mobile = { module = "com.yandex.android:maps.mobile", version.ref = "mapsVer" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -45,3 +50,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
