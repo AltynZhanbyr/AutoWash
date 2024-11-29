@@ -69,4 +69,5 @@ dependencies {
     implementation(libs.datastore)
 
     implementation(libs.maps.mobile)
+    implementation(libs.google.location.services)
 }

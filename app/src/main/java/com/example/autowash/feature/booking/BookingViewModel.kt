@@ -12,6 +12,7 @@ class BookingViewModel : ViewModel() {
     fun eventHandler(event: BookingEvent) {
         when (event) {
             is BookingEvent.ChangeSearch -> event.changeSearch()
+            is BookingEvent.GetCurrentPosition -> event.getCurrentPosition()
         }
     }
 
@@ -19,6 +20,15 @@ class BookingViewModel : ViewModel() {
         _state.update { state ->
             state.copy(
                 searchField = value
+            )
+        }
+    }
+
+    private fun BookingEvent.GetCurrentPosition.getCurrentPosition() {
+        _state.update { state ->
+            state.copy(
+                longitude = longitude,
+                latitude = latitude
             )
         }
     }
