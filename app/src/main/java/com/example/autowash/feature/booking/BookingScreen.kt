@@ -21,10 +21,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,16 +36,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.viewpager.widget.ViewPager.LayoutParams
 import com.example.autowash.R
+import com.example.autowash.feature.booking.model.BookingEvent
+import com.example.autowash.feature.booking.model.BookingScreens
+import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.ui.component.BasicButton
-import com.example.autowash.ui.component.SelectedAutoWash
 import com.example.autowash.ui.component.TextField
-import com.example.autowash.ui.component.YandexMapComponent
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.SettingsClient
-import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.mapview.MapView
 
 @Composable
@@ -71,7 +66,6 @@ private fun BookingScreen(
     event: (BookingEvent) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    val context = LocalContext.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -102,14 +96,15 @@ private fun BookingScreen(
             label = "Booking screen state"
         ) { targetState ->
             when (targetState) {
-                BookingScreens.MapScreen -> YandexMapComponent(
+                BookingScreens.MapScreen -> MapScreen(
                     modifier = Modifier
                         .fillMaxSize(),
-                    paddingValues = paddingValues,
-                    state.searchField,
-                    onSearchChange = { value ->
-                        event(BookingEvent.ChangeSearch(value))
+                    state = state,
+                    event = event,
+                    searchField = {
+                        state.searchField
                     },
+                    paddingValues = paddingValues,
                     onBackPress = {
                         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
                     }
@@ -133,22 +128,6 @@ private fun MainBookingScreen(
 ) {
     val colors = LocalColors.current
 
-    SideEffect {
-        mapView?.let { view ->
-            if (state.latitude.isBlank() && state.longitude.isBlank())
-                return@let
-
-            view.mapWindow.map.move(
-                CameraPosition(
-                    Point(state.latitude.toDouble(), state.longitude.toDouble()),
-                    /* zoom = */ 17.0f,
-                    /* azimuth = */ 150.0f,
-                    /* tilt = */ 30.0f
-                )
-            )
-        }
-    }
-
     Box(
         modifier = Modifier
             .padding(paddingValues)
@@ -158,12 +137,12 @@ private fun MainBookingScreen(
                 vertical = 14.dp,
                 horizontal = 24.dp
             )
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(state = rememberScrollState())
-                .imePadding(),
+                .verticalScroll(state = rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
             Text(
@@ -216,87 +195,6 @@ private fun MainBookingScreen(
                         paddingValues = PaddingValues()
                     )
                 }
-
-//                    IconButton(
-//                        modifier = Modifier
-//                            .padding(start = 5.dp, bottom = 5.dp)
-//                            .border(width = 2.dp, color = colors.primary, shape = CircleShape)
-//                            .size(40.dp)
-//                            .align(Alignment.BottomStart),
-//                        onClick = {
-//                            mapView?.let { view ->
-//                                if (!isLocationPermissionIsEnable) {
-//                                    locationPermission.launch(
-//                                        arrayOf(
-//                                            android.Manifest.permission.ACCESS_FINE_LOCATION,
-//                                            android.Manifest.permission.ACCESS_COARSE_LOCATION
-//                                        )
-//                                    )
-//                                }
-//
-//                                val locationRequest = LocationRequest.Builder(
-//                                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-//                                    10_000L
-//                                )
-//                                    .setMinUpdateIntervalMillis(5_000L)
-//                                    .build()
-//
-//                                val builder = LocationSettingsRequest.Builder()
-//                                    .addLocationRequest(locationRequest)
-//
-//                                val client: SettingsClient =
-//                                    LocationServices.getSettingsClient(LocalContext.current)
-//                                val locationTask = client.checkLocationSettings(builder.build())
-//
-//                                locationTask.addOnFailureListener { exception ->
-//                                    if (exception is ResolvableApiException) {
-//                                        try {
-//                                            exception.startResolutionForResult(
-//                                                context as Activity,
-//                                                101
-//                                            )
-//                                        } catch (sendEx: IntentSender.SendIntentException) {
-//
-//                                        }
-//                                    } else {
-//
-//                                    }
-//                                }
-//
-//                                mapKit?.let { kit ->
-//                                    val userLocation =
-//                                        kit.createTrafficLayer(view.mapWindow)
-//
-//                                    userLocation.isTrafficVisible = listOf(1, 2, 3, 4).shuffled().last() % 2 == 0
-//                                    userLocation.resetTrafficStyles()
-//                                }
-//
-//                                val task = LocationServices.getFusedLocationProviderClient(context)
-//                                task.lastLocation.addOnSuccessListener { location ->
-//                                    location?.let {
-//                                        event(
-//                                            BookingEvent.GetCurrentPosition(
-//                                                location.longitude.toString(),
-//                                                location.latitude.toString()
-//                                            )
-//                                        )
-//                                    }
-//                                }
-//                            }
-//
-//                        },
-//                        colors = IconButtonDefaults.iconButtonColors(
-//                            contentColor = colors.primary,
-//                            containerColor = colors.background
-//                        ),
-//                        interactionSource = remember { MutableInteractionSource() }
-//                    ) {
-//                        Icon(
-//                            painter = painterResource(R.drawable.ic_location),
-//                            contentDescription = null,
-//                            tint = colors.primary
-//                        )
-//                    }
             }
 
             TextField(
@@ -316,14 +214,14 @@ private fun MainBookingScreen(
                 modifier = Modifier
             )
 
-            SelectedAutoWash(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                autoWashName = state.latitude,
-                distance = 400.0
-            ) {
-
-            }
+//            SelectedAutoWash(
+//                modifier = Modifier
+//                    .fillMaxWidth(),
+//                autoWashName = state.latitude,
+//                distance = 400.0
+//            ) {
+//
+//            }
         }
     }
 }

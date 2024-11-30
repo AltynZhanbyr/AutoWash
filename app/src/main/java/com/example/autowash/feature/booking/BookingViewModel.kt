@@ -1,6 +1,9 @@
 package com.example.autowash.feature.booking
 
 import androidx.lifecycle.ViewModel
+import com.example.autowash.feature.booking.model.BookingEvent
+import com.example.autowash.feature.booking.model.BookingUIState
+import com.example.autowash.feature.booking.model.Location
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -14,6 +17,7 @@ class BookingViewModel : ViewModel() {
             is BookingEvent.ChangeSearch -> event.changeSearch()
             is BookingEvent.GetCurrentPosition -> event.getCurrentPosition()
             is BookingEvent.ChangeBookingSelectedScreen -> event.changeBookingSelectedScreen()
+            is BookingEvent.SetGeoObjectList -> event.setGeoObjectList()
         }
     }
 
@@ -28,8 +32,7 @@ class BookingViewModel : ViewModel() {
     private fun BookingEvent.GetCurrentPosition.getCurrentPosition() {
         _state.update { state ->
             state.copy(
-                longitude = longitude,
-                latitude = latitude
+                userPosition = Location(latitude, longitude)
             )
         }
     }
@@ -38,6 +41,14 @@ class BookingViewModel : ViewModel() {
         _state.update { state ->
             state.copy(
                 selectedBookingScreen = value
+            )
+        }
+    }
+
+    private fun BookingEvent.SetGeoObjectList.setGeoObjectList() {
+        _state.update { state ->
+            state.copy(
+                searchedGeoObjects = values
             )
         }
     }

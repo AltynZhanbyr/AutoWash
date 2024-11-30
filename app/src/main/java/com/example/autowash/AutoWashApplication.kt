@@ -8,5 +8,6 @@ class AutoWashApplication : Application() {
         super.onCreate()
 
         MapKitFactory.setApiKey(BuildConfig.YANDEX_MAP_API)
+        MapKitFactory.initialize(this)
     }
 }
