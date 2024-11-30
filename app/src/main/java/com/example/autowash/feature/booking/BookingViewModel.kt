@@ -13,6 +13,7 @@ class BookingViewModel : ViewModel() {
         when (event) {
             is BookingEvent.ChangeSearch -> event.changeSearch()
             is BookingEvent.GetCurrentPosition -> event.getCurrentPosition()
+            is BookingEvent.ChangeBookingSelectedScreen -> event.changeBookingSelectedScreen()
         }
     }
 
@@ -29,6 +30,14 @@ class BookingViewModel : ViewModel() {
             state.copy(
                 longitude = longitude,
                 latitude = latitude
+            )
+        }
+    }
+
+    private fun BookingEvent.ChangeBookingSelectedScreen.changeBookingSelectedScreen() {
+        _state.update { state ->
+            state.copy(
+                selectedBookingScreen = value
             )
         }
     }

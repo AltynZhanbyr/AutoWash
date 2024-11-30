@@ -51,6 +51,29 @@ fun BasicButton(
     }
 }
 
+@Composable
+fun BasicButton(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+    onClick: () -> Unit,
+    contentColor: Color,
+    containerColor: Color,
+    paddingValues: PaddingValues
+) {
+    Button(
+        modifier = modifier,
+        shape = RoundedCornerShape(15.dp),
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            contentColor = contentColor,
+            containerColor = containerColor
+        ),
+        contentPadding = paddingValues
+    ) {
+        content.invoke()
+    }
+}
+
 @Preview
 @Composable
 fun BasicButtonPrev() {
