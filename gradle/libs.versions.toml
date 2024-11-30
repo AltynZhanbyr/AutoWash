@@ -16,7 +16,7 @@ kotlinxSerialization = "1.7.2"
 
 datastoreVer = "1.1.1"
 
-mapsVer = "4.9.0-lite"
+mapsVer = "4.9.0-full"
 jetbrainsKotlinJvm = "2.0.0"
 googlePlayServices = "21.3.0"
 

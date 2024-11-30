@@ -44,6 +44,8 @@ import com.example.autowash.ui.component.TextField
 import com.example.autowash.ui.component.YandexMapComponent
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.SettingsClient
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.mapview.MapView
@@ -243,7 +245,7 @@ private fun MainBookingScreen(
 //                                    .addLocationRequest(locationRequest)
 //
 //                                val client: SettingsClient =
-//                                    LocationServices.getSettingsClient(context)
+//                                    LocationServices.getSettingsClient(LocalContext.current)
 //                                val locationTask = client.checkLocationSettings(builder.build())
 //
 //                                locationTask.addOnFailureListener { exception ->
