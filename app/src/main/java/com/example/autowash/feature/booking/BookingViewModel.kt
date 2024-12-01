@@ -1,6 +1,7 @@
 package com.example.autowash.feature.booking
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.autowash.core.settings.AppPreferences
 import com.example.autowash.feature.booking.model.AppGeoObject
 import com.example.autowash.feature.booking.model.BookingEvent
@@ -11,6 +12,7 @@ import com.yandex.mapkit.geometry.Point
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class BookingViewModel(
     private val appPreferences: AppPreferences
@@ -23,23 +25,9 @@ class BookingViewModel(
             city.cityId == appPreferences.getCityMap()
         }
 
-        val selectedGeoObjectName = appPreferences.getGeoObjectName()
-        val selectedGeoObjectLatitude = appPreferences.getGeoObjectLatitude()
-        val selectedGeoObjectLongitude = appPreferences.getGeoObjectLongitude()
-
-        val appGeoObject =
-            if (selectedGeoObjectName.isNotBlank() && selectedGeoObjectLongitude > 0.0f && selectedGeoObjectLatitude > 0.0f)
-                AppGeoObject(
-                    selectedGeoObjectName,
-                    selectedGeoObjectLatitude,
-                    selectedGeoObjectLongitude
-                )
-            else null
-
         _state.update { state ->
             state.copy(
-                selectedMapDropdown = selectedMap,
-                selectedGeoObject = appGeoObject
+                selectedMapDropdown = selectedMap
             )
         }
     }
@@ -101,21 +89,24 @@ class BookingViewModel(
     }
 
     private fun BookingEvent.SelectedGeoObject.selectGeoObject() {
-        _state.update { state ->
-            val geometry = value.geometry[0].point ?: Point(0.0, 0.0)
-            if (geometry.latitude > 0.0 && geometry.longitude > 0.0 && value.name != null) {
-                appPreferences.setGeoObjectName(value.name!!)
-                appPreferences.setGeoObjectLatitude(geometry.latitude)
-                appPreferences.setGeoObjectLongitude(geometry.longitude)
-            } else return
+        viewModelScope.launch {
+            _state.update { state ->
+                val geometry = value.geometry[0].point ?: Point(0.0, 0.0)
+                if (geometry.latitude > 0.0 && geometry.longitude > 0.0 && value.name != null) {
+                    appPreferences.setGeoObjectName(value.name!!)
+                    appPreferences.setGeoObjectLatitude(geometry.latitude)
+                    appPreferences.setGeoObjectLongitude(geometry.longitude)
+                } else return@launch
 
-            state.copy(
-                selectedGeoObject = AppGeoObject(
-                    value.name!!,
-                    geometry.latitude.toFloat(),
-                    geometry.longitude.toFloat()
+                state.copy(
+                    selectedGeoObject = AppGeoObject(
+                        value.name!!,
+                        distValue,
+                        geometry.latitude.toFloat(),
+                        geometry.longitude.toFloat()
+                    )
                 )
-            )
+            }
         }
     }
 }

@@ -184,6 +184,8 @@ fun MapScreen(
 
     BackHandler(state.selectedBookingScreen.isMapScreen()) {
         clearData(geoObjectTapListener, cameraListener)
+        event(BookingEvent.SetGeoObjectList(emptyList()))
+        event(BookingEvent.ChangeSearch(""))
         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
     }
 
@@ -244,26 +246,24 @@ fun MapScreen(
         })
 
     LaunchedEffect(state.searchedGeoObjects) {
-        withContext(Dispatchers.Main) {
-            map?.mapObjects?.clear()
+        map?.mapObjects?.clear()
 
-            state.searchedGeoObjects.forEach { geoObject ->
-                placemark = map?.mapObjects?.addPlacemark()?.apply {
-                    geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
-                    setIcon(
-                        ImageProvider.fromResource(context, R.drawable.img_res_final),
-                        IconStyle().apply {
-                            anchor = PointF(0.5f, 1.0f)
-                            scale = 0.03f
-                            zIndex = 10f
-                        }
-                    )
-                }
+        state.searchedGeoObjects.forEach { geoObject ->
+            placemark = map?.mapObjects?.addPlacemark()?.apply {
+                geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
+                setIcon(
+                    ImageProvider.fromResource(context, R.drawable.img_res_final),
+                    IconStyle().apply {
+                        anchor = PointF(0.5f, 1.0f)
+                        scale = 0.03f
+                        zIndex = 10f
+                    }
+                )
+            }
 
-                placemark?.addTapListener { _, _ ->
-                    localGeoObject = geoObject
-                    true
-                }
+            placemark?.addTapListener { _, _ ->
+                localGeoObject = geoObject
+                true
             }
         }
     }
@@ -321,13 +321,30 @@ fun MapScreen(
                             paddingValues = PaddingValues(),
                             onClick = {
                                 scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    event(BookingEvent.SelectedGeoObject(localGeoObject!!))
+                                    val geometry =
+                                        localGeoObject!!.geometry[0].point ?: Point(0.0, 0.0)
+                                    val distance =
+                                        if (state.userPosition != null) calculateDistance(
+                                            state.userPosition.latitude,
+                                            state.userPosition.longitude,
+                                            geometry.latitude,
+                                            geometry.longitude
+                                        ) else 0.0
+
+                                    event(
+                                        BookingEvent.SelectedGeoObject(
+                                            localGeoObject!!,
+                                            distance
+                                        )
+                                    )
 
                                     if (!sheetState.isVisible) {
                                         localGeoObject = null
                                     }
 
                                     clearData(geoObjectTapListener, cameraListener)
+                                    event(BookingEvent.SetGeoObjectList(emptyList()))
+                                    event(BookingEvent.ChangeSearch(""))
                                     event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
                                 }
                             },
@@ -402,6 +419,8 @@ fun MapScreen(
                         .height(56.dp),
                     onClick = {
                         clearData(geoObjectTapListener, cameraListener)
+                        event(BookingEvent.SetGeoObjectList(emptyList()))
+                        event(BookingEvent.ChangeSearch(""))
                         onBackPress.invoke()
                     },
                     contentColor = colors.onPrimary,
@@ -517,6 +536,8 @@ fun MapScreen(
                 if (checkLocationPermissions) {
                     val task = LocationServices.getFusedLocationProviderClient(context)
                     task.lastLocation.addOnSuccessListener { location ->
+                        if (location == null) return@addOnSuccessListener
+
                         scope.launch {
                             val distance = withContext(Dispatchers.Default) {
                                 val distances = state.cityMapList.map { city ->
@@ -539,26 +560,24 @@ fun MapScreen(
                                 distance.first.northEast
                             )
 
-                            location?.let {
-                                map?.move(
-                                    CameraPosition(
-                                        Point(location.latitude, location.longitude),
-                                        20f,
-                                        0f,
-                                        30.0f
-                                    ),
-                                    animation
-                                ) {}
+                            map?.move(
+                                CameraPosition(
+                                    Point(location.latitude, location.longitude),
+                                    20f,
+                                    0f,
+                                    30.0f
+                                ),
+                                animation
+                            ) {}
 
-                                event(
-                                    BookingEvent.GetCurrentPosition(
-                                        location.latitude,
-                                        location.longitude
-                                    )
+                            event(
+                                BookingEvent.GetCurrentPosition(
+                                    location.latitude,
+                                    location.longitude
                                 )
+                            )
 
-                                event(BookingEvent.SelectCityMapDropdown(distance.first.idx))
-                            }
+                            event(BookingEvent.SelectCityMapDropdown(distance.first.idx))
                         }
                     }
                 }

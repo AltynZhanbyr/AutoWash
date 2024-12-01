@@ -8,7 +8,7 @@ sealed interface BookingEvent {
     data class ChangeBookingSelectedScreen(val value: BookingScreens) : BookingEvent
 
     data class SetGeoObjectList(val values: List<GeoObject>) : BookingEvent
-    data class SelectedGeoObject(val value: GeoObject) : BookingEvent
+    data class SelectedGeoObject(val value: GeoObject, val distValue: Double) : BookingEvent
 
     data class SelectCityMapDropdown(val value: Int) : BookingEvent
 }
