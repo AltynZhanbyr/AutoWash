@@ -2,7 +2,6 @@
 
 package com.example.autowash.feature.booking
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -84,10 +83,6 @@ private fun BookingScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
-    }
-
-    BackHandler(state.selectedBookingScreen.isMapScreen()) {
-        event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
     }
 
     Scaffold(

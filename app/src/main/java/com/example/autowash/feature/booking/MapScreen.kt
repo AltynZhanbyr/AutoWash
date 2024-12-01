@@ -5,6 +5,7 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.PointF
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -50,6 +51,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.viewpager.widget.ViewPager.LayoutParams
 import com.example.autowash.R
 import com.example.autowash.feature.booking.model.BookingEvent
+import com.example.autowash.feature.booking.model.BookingScreens
 import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.feature.booking.model.MapKitListeners
 import com.example.autowash.ui.component.BasicButton
@@ -108,11 +110,6 @@ fun MapScreen(
         resultPageSize = 32
     }
 
-    val locationPermission = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = {}
-    )
-
     val builder = LocationSettingsRequest.Builder()
         .addLocationRequest(locationRequest)
 
@@ -128,13 +125,6 @@ fun MapScreen(
         android.Manifest.permission.ACCESS_COARSE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
 
-    LaunchedEffect(Unit) {
-        if (!checkLocationPermissions) {
-            locationPermission.launch(permissionList.toTypedArray())
-        }
-    }
-
-    var lastReqState by remember { mutableStateOf("") }
 
     val mapKitListeners = MapKitListeners(context)
 
@@ -170,6 +160,30 @@ fun MapScreen(
         }
     }
 
+    BackHandler(state.selectedBookingScreen.isMapScreen()) {
+        mapKit?.onStop()
+        mapView?.onStop()
+        map?.removeTapListener(geoObjectTapListener)
+        map?.removeCameraListener(cameraListener)
+        userLocationLayer = null
+        searchSession?.cancel()
+
+        event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
+    }
+
+    val locationPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = {}
+    )
+
+    LaunchedEffect(Unit) {
+        if (!checkLocationPermissions) {
+            locationPermission.launch(permissionList.toTypedArray())
+        }
+    }
+
+    var lastReqState by remember { mutableStateOf("") }
+
     MapScreenLifecycleObserver(
         lifecycleOwner = lifecycleOwner,
         onStart = {
@@ -191,6 +205,8 @@ fun MapScreen(
         }, onStop = {
             mapKit?.onStop()
             mapView?.onStop()
+            map?.removeTapListener(geoObjectTapListener)
+            map?.removeCameraListener(cameraListener)
         })
 
     LaunchedEffect(state.searchedGeoObjects) {
@@ -267,7 +283,16 @@ fun MapScreen(
                 modifier = Modifier
                     .weight(0.1f)
                     .height(56.dp),
-                onClick = onBackPress,
+                onClick = {
+                    mapKit?.onStop()
+                    mapView?.onStop()
+                    map?.removeTapListener(geoObjectTapListener)
+                    map?.removeCameraListener(cameraListener)
+                    userLocationLayer = null
+                    searchSession?.cancel()
+
+                    onBackPress.invoke()
+                },
                 contentColor = colors.onPrimary,
                 containerColor = colors.primary,
                 content = {
