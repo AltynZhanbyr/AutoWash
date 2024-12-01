@@ -23,8 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.autowash.feature.booking.model.Dropdown
-import com.example.autowash.feature.booking.model.MapCity
+import com.example.autowash.core.model.Dropdown
+import com.example.autowash.core.model.MapCity
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
 

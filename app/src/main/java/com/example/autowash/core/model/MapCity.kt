@@ -1,4 +1,4 @@
-package com.example.autowash.feature.booking.model
+package com.example.autowash.core.model
 
 import com.yandex.mapkit.geometry.Point
 

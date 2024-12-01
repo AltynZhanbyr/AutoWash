@@ -2,12 +2,12 @@ package com.example.autowash.feature.booking
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.autowash.core.model.AppGeoObject
+import com.example.autowash.core.model.Location
+import com.example.autowash.core.model.MapCity
 import com.example.autowash.core.settings.AppPreferences
-import com.example.autowash.feature.booking.model.AppGeoObject
 import com.example.autowash.feature.booking.model.BookingEvent
 import com.example.autowash.feature.booking.model.BookingUIState
-import com.example.autowash.feature.booking.model.Location
-import com.example.autowash.feature.booking.model.MapCity
 import com.yandex.mapkit.geometry.Point
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -103,7 +103,7 @@ class BookingViewModel(
                 state.copy(
                     selectedGeoObject = AppGeoObject(
                         value.name!!,
-                        distValue,
+                        distValue * 1000,
                         geometry.latitude.toFloat(),
                         geometry.longitude.toFloat()
                     )

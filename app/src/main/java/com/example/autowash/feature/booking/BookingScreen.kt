@@ -160,6 +160,13 @@ private fun BookingScreen(
                         dialogVisible = visibility
                     }
                 )
+
+                BookingScreens.ScheduleScreen -> DateTimePickerScreen(
+                    state = state,
+                    modifier = Modifier,
+                    paddingValues = PaddingValues(),
+                    event = event
+                )
             }
         }
     }

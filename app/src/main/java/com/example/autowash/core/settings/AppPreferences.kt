@@ -1,7 +1,7 @@
 package com.example.autowash.core.settings
 
 import android.content.Context
-import com.example.autowash.feature.booking.model.MapCity
+import com.example.autowash.core.model.MapCity
 
 class AppPreferences(private val context: Context) {
     private val preferences = context.getSharedPreferences(APP_REFERENCES, Context.MODE_PRIVATE)

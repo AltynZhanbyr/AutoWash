@@ -1,4 +1,4 @@
-package com.example.autowash.feature.booking.model
+package com.example.autowash.core.model
 
 data class AppGeoObject(
     val title: String,
