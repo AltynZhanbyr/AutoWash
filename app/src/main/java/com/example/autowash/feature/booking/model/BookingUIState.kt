@@ -8,7 +8,10 @@ data class BookingUIState(
     val searchField: String = "",
     val selectedBookingScreen: BookingScreens = BookingScreens.MainBookingScreen,
     val searchedGeoObjects: List<GeoObject> = emptyList(),
-    val userPosition: Location? = null
+    val userPosition: Location? = null,
+    val cityMapList: List<MapCityDropdown> = MapCity.toDropdownList(),
+    val selectedMapDropdown: MapCityDropdown? = null,
+    val selectedGeoObject: AppGeoObject? = null
 )
 
 enum class BookingScreens {

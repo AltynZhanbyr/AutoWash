@@ -70,4 +70,6 @@ dependencies {
 
     implementation(libs.maps.mobile)
     implementation(libs.google.location.services)
+
+    implementation(libs.bundles.koin)
 }

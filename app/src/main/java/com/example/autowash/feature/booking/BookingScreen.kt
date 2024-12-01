@@ -1,5 +1,3 @@
-@file:Suppress("NAME_SHADOWING")
-
 package com.example.autowash.feature.booking
 
 import androidx.compose.animation.AnimatedContent
@@ -32,7 +30,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.viewpager.widget.ViewPager.LayoutParams
 import com.example.autowash.R
 import com.example.autowash.feature.booking.model.BookingEvent
@@ -43,19 +40,16 @@ import com.example.autowash.ui.component.TextField
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
 import com.yandex.mapkit.mapview.MapView
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun BookingScreen() {
-    val viewModel = viewModel {
-        BookingViewModel()
-    }
+    val viewModel = koinViewModel<BookingViewModel>()
 
     val state = viewModel.state.collectAsStateWithLifecycle().value
-    val searchField = viewModel.searchState.value
 
     BookingScreen(
         state = state,
-        searchField = searchField,
         event = viewModel::eventHandler
     )
 }
@@ -65,7 +59,6 @@ private var mapView: MapView? = null
 @Composable
 private fun BookingScreen(
     state: BookingUIState,
-    searchField: String,
     event: (BookingEvent) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -100,7 +93,6 @@ private fun BookingScreen(
                         .fillMaxSize(),
                     state = state,
                     event = event,
-                    searchField = searchField,
                     paddingValues = paddingValues,
                     onBackPress = {
                         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))

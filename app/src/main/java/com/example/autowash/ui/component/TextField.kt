@@ -1,13 +1,13 @@
 package com.example.autowash.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -47,7 +47,9 @@ fun TextField(
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     minLines: Int = 1,
     colors: TextFieldColors = TextFieldDefaults.colors(),
-    isError: Boolean = false
+    isError: Boolean = false,
+    isBorderEnabled: Boolean = false,
+    trailingIcon: @Composable (() -> Unit)? = null,
 ) {
     val localColors = LocalColors.current
     val fieldColors = colors.copy(
@@ -58,7 +60,8 @@ fun TextField(
         errorIndicatorColor = Color.Transparent,
         unfocusedIndicatorColor = Color.Transparent,
         disabledIndicatorColor = Color.Transparent,
-        focusedIndicatorColor = Color.Transparent
+        focusedIndicatorColor = Color.Transparent,
+        disabledContainerColor = localColors.background
     )
 
     val textStyle = LocalTextStyle.current
@@ -68,7 +71,14 @@ fun TextField(
             value = value,
             onValueChange = onValueChange,
             modifier = modifier
-                .defaultMinSize(minWidth = MinWidth, minHeight = MinHeight),
+                .defaultMinSize(minWidth = MinWidth, minHeight = MinHeight)
+                .then(
+                    if (isBorderEnabled) Modifier.border(
+                        width = (1.5f).dp,
+                        color = localColors.primary,
+                        RoundedCornerShape(15.dp)
+                    ) else Modifier
+                ),
             enabled = enabled,
             readOnly = readOnly,
             textStyle = textStyle
@@ -96,6 +106,7 @@ fun TextField(
                     },
                     label = null,
                     singleLine = true,
+                    trailingIcon = trailingIcon,
                     isError = isError,
                     enabled = enabled,
                     interactionSource = interactionSource,

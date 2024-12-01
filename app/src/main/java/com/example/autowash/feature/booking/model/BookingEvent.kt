@@ -7,4 +7,6 @@ sealed interface BookingEvent {
     data class GetCurrentPosition(val latitude: Double, val longitude: Double) : BookingEvent
     data class ChangeBookingSelectedScreen(val value: BookingScreens) : BookingEvent
     data class SetGeoObjectList(val values: List<GeoObject>) : BookingEvent
+
+    data class SelectCityMapDropdown(val value: Int) : BookingEvent
 }

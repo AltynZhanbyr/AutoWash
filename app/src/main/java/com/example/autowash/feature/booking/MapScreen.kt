@@ -12,8 +12,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +57,7 @@ import com.example.autowash.feature.booking.model.BookingScreens
 import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.feature.booking.model.MapKitListeners
 import com.example.autowash.ui.component.BasicButton
+import com.example.autowash.ui.component.Dropdown
 import com.example.autowash.ui.component.TextField
 import com.example.autowash.util.LocalColors
 import com.google.android.gms.common.api.ResolvableApiException
@@ -94,7 +97,6 @@ private var map: Map? = null
 fun MapScreen(
     modifier: Modifier = Modifier,
     state: BookingUIState,
-    searchField: String,
     paddingValues: PaddingValues,
     event: (BookingEvent) -> Unit,
     onBackPress: () -> Unit
@@ -104,10 +106,11 @@ fun MapScreen(
     val colors = LocalColors.current
 
     var dialogVisibility by remember { mutableStateOf(false) }
+    var lastReqState by remember { mutableStateOf("") }
 
     val searchOptions = SearchOptions().apply {
         searchTypes = SearchType.BIZ.value
-        resultPageSize = 32
+        resultPageSize = 50
     }
 
     val builder = LocationSettingsRequest.Builder()
@@ -146,13 +149,13 @@ fun MapScreen(
     val cameraListener = mapKitListeners.cameraListener {
         searchSession?.cancel()
         map?.let { mapValue ->
-            if (searchField.isBlank()) {
+            if (lastReqState.isBlank()) {
                 event(BookingEvent.SetGeoObjectList(emptyList()))
                 return@let
             }
 
             searchSession = searchManager.submit(
-                searchField,
+                lastReqState,
                 VisibleRegionUtils.toPolygon(mapValue.visibleRegion),
                 searchOptions,
                 searchSessionListener,
@@ -182,7 +185,25 @@ fun MapScreen(
         }
     }
 
-    var lastReqState by remember { mutableStateOf("") }
+    LaunchedEffect(state.selectedMapDropdown) {
+        val point =
+            state.selectedMapDropdown?.cityLatLong ?: state.cityMapList[0].cityLatLong
+        val nePoint = state.selectedMapDropdown?.northEast ?: state.cityMapList[0].northEast
+        val swPoint = state.selectedMapDropdown?.southWest ?: state.cityMapList[0].southWest
+
+        map?.cameraBounds?.latLngBounds = BoundingBox(
+            swPoint,
+            nePoint
+        )
+        map?.move(
+            CameraPosition(
+                point,
+                9f,
+                0f,
+                0f
+            )
+        )
+    }
 
     MapScreenLifecycleObserver(
         lifecycleOwner = lifecycleOwner,
@@ -240,16 +261,20 @@ fun MapScreen(
             factory = { context ->
                 mapView = MapView(context)
                 map = mapView!!.mapWindow.map
-
                 map?.cameraBounds?.setMinZoomPreference(9f)
-                map?.cameraBounds?.latLngBounds = BoundingBox(
-                    Point(51.071760, 71.060010),
-                    Point(51.249176, 71.734296)
-                )
 
+                val point =
+                    state.selectedMapDropdown?.cityLatLong ?: state.cityMapList[0].cityLatLong
+                val nePoint = state.selectedMapDropdown?.northEast ?: state.cityMapList[0].northEast
+                val swPoint = state.selectedMapDropdown?.southWest ?: state.cityMapList[0].southWest
+
+                map?.cameraBounds?.latLngBounds = BoundingBox(
+                    swPoint,
+                    nePoint
+                )
                 map?.move(
                     CameraPosition(
-                        Point(51.169392, 71.449074),
+                        point,
                         9f,
                         0f,
                         0f
@@ -267,73 +292,112 @@ fun MapScreen(
             }
         )
 
-        Row(
+        Column(
             modifier = Modifier
                 .padding(
                     start = 9.dp,
                     end = 9.dp,
                     top = 9.dp
                 )
-                .height(56.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(9.dp)
+
+            verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            BasicButton(
+            Row(
                 modifier = Modifier
-                    .weight(0.1f)
-                    .height(56.dp),
-                onClick = {
-                    mapKit?.onStop()
-                    mapView?.onStop()
-                    map?.removeTapListener(geoObjectTapListener)
-                    map?.removeCameraListener(cameraListener)
-                    userLocationLayer = null
-                    searchSession?.cancel()
-
-                    onBackPress.invoke()
-                },
-                contentColor = colors.onPrimary,
-                containerColor = colors.primary,
-                content = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
-                },
-                paddingValues = PaddingValues()
-            )
-
-            TextField(
-                modifier = Modifier
-                    .weight(0.9f),
-                value = searchField,
-                onValueChange = { value ->
-                    event(BookingEvent.ChangeSearch(value))
-                    lastReqState = value
-                },
-                placeholder = stringResource(R.string.lbl_search),
-                singleLine = true,
-                keyboardActions = KeyboardActions(
-                    onSearch = {
+                    .height(56.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                BasicButton(
+                    modifier = Modifier
+                        .weight(0.1f)
+                        .height(56.dp),
+                    onClick = {
+                        mapKit?.onStop()
+                        mapView?.onStop()
+                        map?.removeTapListener(geoObjectTapListener)
+                        map?.removeCameraListener(cameraListener)
+                        userLocationLayer = null
                         searchSession?.cancel()
-                        map?.let { mapValue ->
-                            if (searchField.isBlank()) {
-                                event(BookingEvent.SetGeoObjectList(emptyList()))
-                                return@let
-                            }
 
-                            searchSession = searchManager.submit(
-                                searchField,
-                                VisibleRegionUtils.toPolygon(mapValue.visibleRegion),
-                                searchOptions,
-                                searchSessionListener,
-                            )
+                        onBackPress.invoke()
+                    },
+                    contentColor = colors.onPrimary,
+                    containerColor = colors.primary,
+                    content = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    },
+                    paddingValues = PaddingValues()
+                )
+
+                TextField(
+                    modifier = Modifier
+                        .weight(0.9f),
+                    value = state.searchField,
+                    onValueChange = { value ->
+                        event(BookingEvent.ChangeSearch(value))
+                        lastReqState = value
+                    },
+                    placeholder = stringResource(R.string.lbl_search),
+                    singleLine = true,
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            searchSession?.cancel()
+                            map?.let { mapValue ->
+                                mapValue.move(
+                                    CameraPosition(
+                                        Point(51.169392, 71.449074),
+                                        9f,
+                                        0f,
+                                        0f
+                                    )
+                                )
+
+                                if (state.searchField.isBlank()) {
+                                    event(BookingEvent.SetGeoObjectList(emptyList()))
+                                    return@let
+                                }
+
+                                searchSession = searchManager.submit(
+                                    state.searchField,
+                                    VisibleRegionUtils.toPolygon(mapValue.visibleRegion),
+                                    searchOptions,
+                                    searchSessionListener,
+                                )
+                            }
                         }
-                    }
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
-            )
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    isBorderEnabled = true
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .height(56.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .weight(1f)
+                )
+
+                Dropdown(
+                    modifier = modifier
+                        .weight(1f),
+                    dropdownList = state.cityMapList,
+                    selectedItem = state.selectedMapDropdown
+                ) { value ->
+                    event(BookingEvent.SelectCityMapDropdown(value))
+                }
+            }
         }
 
         IconButton(
