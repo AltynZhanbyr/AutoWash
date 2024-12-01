@@ -7,6 +7,7 @@ import com.example.autowash.feature.booking.model.BookingEvent
 import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.feature.booking.model.Location
 import com.example.autowash.feature.booking.model.MapCity
+import com.yandex.mapkit.geometry.Point
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -50,6 +51,7 @@ class BookingViewModel(
             is BookingEvent.ChangeBookingSelectedScreen -> event.changeBookingSelectedScreen()
             is BookingEvent.SetGeoObjectList -> event.setGeoObjectList()
             is BookingEvent.SelectCityMapDropdown -> event.selectCityMapDropdown()
+            is BookingEvent.SelectedGeoObject -> event.selectGeoObject()
         }
     }
 
@@ -94,6 +96,25 @@ class BookingViewModel(
 
             state.copy(
                 selectedMapDropdown = selectedDropdown
+            )
+        }
+    }
+
+    private fun BookingEvent.SelectedGeoObject.selectGeoObject() {
+        _state.update { state ->
+            val geometry = value.geometry[0].point ?: Point(0.0, 0.0)
+            if (geometry.latitude > 0.0 && geometry.longitude > 0.0 && value.name != null) {
+                appPreferences.setGeoObjectName(value.name!!)
+                appPreferences.setGeoObjectLatitude(geometry.latitude)
+                appPreferences.setGeoObjectLongitude(geometry.longitude)
+            } else return
+
+            state.copy(
+                selectedGeoObject = AppGeoObject(
+                    value.name!!,
+                    geometry.latitude.toFloat(),
+                    geometry.longitude.toFloat()
+                )
             )
         }
     }

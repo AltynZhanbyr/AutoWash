@@ -2,8 +2,6 @@ package com.example.autowash.feature.booking.model
 
 import android.content.Context
 import android.graphics.PointF
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.autowash.R
@@ -39,7 +37,7 @@ class MapKitListeners(private val context: Context) {
     ): UserLocationObjectListener = object : UserLocationObjectListener {
         override fun onObjectAdded(p0: UserLocationView) {
             p0.arrow.setIcon(
-                ImageProvider.fromResource(context, R.drawable.img_gps_location),
+                ImageProvider.fromResource(context, R.drawable.img_user_loc),
                 IconStyle().apply {
                     anchor = PointF(0.5f, 1.0f)
                     scale = 0.05f
@@ -62,10 +60,11 @@ class MapKitListeners(private val context: Context) {
 
     }
 
-    fun geoObjectTapListener(): GeoObjectTapListener = GeoObjectTapListener { p0 ->
+    fun geoObjectTapListener(
+        result: (GeoObject) -> Unit
+    ): GeoObjectTapListener = GeoObjectTapListener { p0 ->
         if (p0.isValid && p0.geoObject.name != null) {
-            Log.d("ObjectName", p0.geoObject.name!!)
-            Toast.makeText(context, p0.geoObject.name!!, Toast.LENGTH_SHORT).show()
+            result.invoke(p0.geoObject)
         }
         true
     }

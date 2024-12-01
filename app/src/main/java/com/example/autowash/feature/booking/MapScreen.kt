@@ -26,9 +26,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +72,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.yandex.mapkit.Animation
+import com.yandex.mapkit.GeoObject
 import com.yandex.mapkit.MapKit
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.BoundingBox
@@ -96,6 +101,7 @@ private var placemark: PlacemarkMapObject? = null
 private var userLocationLayer: UserLocationLayer? = null
 private var map: Map? = null
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
     modifier: Modifier = Modifier,
@@ -112,6 +118,8 @@ fun MapScreen(
 
     var dialogVisibility by remember { mutableStateOf(false) }
     var lastReqState by remember { mutableStateOf("") }
+
+    var localGeoObject by remember { mutableStateOf<GeoObject?>(null) }
 
     val searchOptions = SearchOptions().apply {
         searchTypes = SearchType.BIZ.value
@@ -149,7 +157,11 @@ fun MapScreen(
         fillColor = colors.primary.copy(alpha = 0.3f)
     )
 
-    val geoObjectTapListener = mapKitListeners.geoObjectTapListener()
+    val sheetState = rememberModalBottomSheetState()
+
+    val geoObjectTapListener = mapKitListeners.geoObjectTapListener { geoObject ->
+        localGeoObject = geoObject
+    }
 
     val cameraListener = mapKitListeners.cameraListener {
         searchSession?.cancel()
@@ -243,10 +255,10 @@ fun MapScreen(
                 placemark = map?.mapObjects?.addPlacemark()?.apply {
                     geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
                     setIcon(
-                        ImageProvider.fromResource(context, R.drawable.img_map_point),
+                        ImageProvider.fromResource(context, R.drawable.img_gps_res_loc),
                         IconStyle().apply {
                             anchor = PointF(0.5f, 1.0f)
-                            scale = 0.08f
+                            scale = 0.05f
                             zIndex = 10f
                         }
                     )
@@ -260,6 +272,71 @@ fun MapScreen(
             .padding(paddingValues)
             .fillMaxSize()
     ) {
+        if (localGeoObject != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    localGeoObject = null
+                },
+                sheetState = sheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                ) {
+                    Text(localGeoObject?.name.orEmpty())
+
+                    Text(localGeoObject?.descriptionText.orEmpty())
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        BasicButton(
+                            modifier = Modifier
+                                .weight(1f),
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary,
+                            paddingValues = PaddingValues(),
+                            onClick = {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        localGeoObject = null
+                                    }
+                                }
+                            },
+                            content = {
+                                Text(stringResource(R.string.lbl_cancel))
+                            }
+                        )
+
+                        BasicButton(
+                            modifier = Modifier
+                                .weight(1f),
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary,
+                            paddingValues = PaddingValues(),
+                            onClick = {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    event(BookingEvent.SelectedGeoObject(localGeoObject!!))
+
+                                    if (!sheetState.isVisible) {
+                                        localGeoObject = null
+                                    }
+                                }
+                            },
+                            content = {
+                                Text(stringResource(R.string.lbl_choose))
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+
         AndroidView(
             modifier = Modifier
                 .fillMaxSize(),

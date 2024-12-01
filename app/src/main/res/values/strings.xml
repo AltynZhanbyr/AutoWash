@@ -11,6 +11,8 @@
     <string name="lbl_i_am_booking">Бронирую</string>
     <string name="lbl_you_phone_number">Ваш номер телефона</string>
     <string name="lbl_search">Поиск</string>
+    <string name="lbl_cancel">Отмена</string>
+    <string name="lbl_choose">Выбрать</string>
 
     <string name="placeholder_meters_away">%.1f метров от вас</string>
 </resources>
