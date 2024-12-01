@@ -50,6 +50,9 @@ class MapKitListeners(private val context: Context) {
         }
 
         override fun onObjectRemoved(p0: UserLocationView) {
+            p0.accuracyCircle.fillColor = fillColor.toArgb()
+            p0.accuracyCircle.strokeWidth = strokeWidth
+            p0.accuracyCircle.strokeColor = strokeColor.toArgb()
         }
 
         override fun onObjectUpdated(p0: UserLocationView, p1: ObjectEvent) {

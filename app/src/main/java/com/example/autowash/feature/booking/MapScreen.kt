@@ -77,6 +77,8 @@ import com.yandex.mapkit.MapKit
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.BoundingBox
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.layers.GeoObjectTapListener
+import com.yandex.mapkit.map.CameraListener
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.IconStyle
 import com.yandex.mapkit.map.Map
@@ -181,13 +183,7 @@ fun MapScreen(
     }
 
     BackHandler(state.selectedBookingScreen.isMapScreen()) {
-        mapKit?.onStop()
-        mapView?.onStop()
-        map?.removeTapListener(geoObjectTapListener)
-        map?.removeCameraListener(cameraListener)
-        userLocationLayer = null
-        searchSession?.cancel()
-
+        clearData(geoObjectTapListener, cameraListener)
         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
     }
 
@@ -255,13 +251,18 @@ fun MapScreen(
                 placemark = map?.mapObjects?.addPlacemark()?.apply {
                     geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
                     setIcon(
-                        ImageProvider.fromResource(context, R.drawable.img_gps_res_loc),
+                        ImageProvider.fromResource(context, R.drawable.img_res_final),
                         IconStyle().apply {
                             anchor = PointF(0.5f, 1.0f)
-                            scale = 0.05f
+                            scale = 0.03f
                             zIndex = 10f
                         }
                     )
+                }
+
+                placemark?.addTapListener { _, _ ->
+                    localGeoObject = geoObject
+                    true
                 }
             }
         }
@@ -325,6 +326,9 @@ fun MapScreen(
                                     if (!sheetState.isVisible) {
                                         localGeoObject = null
                                     }
+
+                                    clearData(geoObjectTapListener, cameraListener)
+                                    event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
                                 }
                             },
                             content = {
@@ -368,7 +372,7 @@ fun MapScreen(
             },
             update = { view ->
 
-                map?.addTapListener(geoObjectTapListener)
+                // map?.addTapListener(geoObjectTapListener)
                 view.layoutParams.height = LayoutParams.MATCH_PARENT
                 view.layoutParams.width = LayoutParams.MATCH_PARENT
             }
@@ -397,13 +401,7 @@ fun MapScreen(
                         .weight(0.1f)
                         .height(56.dp),
                     onClick = {
-                        mapKit?.onStop()
-                        mapView?.onStop()
-                        map?.removeTapListener(geoObjectTapListener)
-                        map?.removeCameraListener(cameraListener)
-                        userLocationLayer = null
-                        searchSession?.cancel()
-
+                        clearData(geoObjectTapListener, cameraListener)
                         onBackPress.invoke()
                     },
                     contentColor = colors.onPrimary,
@@ -604,6 +602,19 @@ private val locationRequest = LocationRequest.Builder(
 
 private val searchManager =
     SearchFactory.getInstance().createSearchManager(SearchManagerType.COMBINED)
+
+private fun clearData(
+    geoObjectTapListener: GeoObjectTapListener,
+    cameraListener: CameraListener
+) {
+    mapKit?.onStop()
+    mapView?.onStop()
+    map?.removeTapListener(geoObjectTapListener)
+    map?.removeCameraListener(cameraListener)
+    userLocationLayer = null
+    placemark = null
+    searchSession?.cancel()
+}
 
 @Composable
 fun MapScreenLifecycleObserver(
