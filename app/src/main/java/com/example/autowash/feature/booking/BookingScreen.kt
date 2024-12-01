@@ -52,8 +52,11 @@ fun BookingScreen() {
     }
 
     val state = viewModel.state.collectAsStateWithLifecycle().value
+    val searchField = viewModel.searchState.value
+
     BookingScreen(
         state = state,
+        searchField = searchField,
         event = viewModel::eventHandler
     )
 }
@@ -63,6 +66,7 @@ private var mapView: MapView? = null
 @Composable
 private fun BookingScreen(
     state: BookingUIState,
+    searchField: String,
     event: (BookingEvent) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -101,9 +105,7 @@ private fun BookingScreen(
                         .fillMaxSize(),
                     state = state,
                     event = event,
-                    searchField = {
-                        state.searchField
-                    },
+                    searchField = searchField,
                     paddingValues = paddingValues,
                     onBackPress = {
                         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))

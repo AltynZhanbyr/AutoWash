@@ -1,5 +1,6 @@
 package com.example.autowash.feature.booking
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.autowash.feature.booking.model.BookingEvent
 import com.example.autowash.feature.booking.model.BookingUIState
@@ -12,6 +13,8 @@ class BookingViewModel : ViewModel() {
     private val _state = MutableStateFlow(BookingUIState())
     val state = _state.asStateFlow()
 
+    val searchState = mutableStateOf("")
+
     fun eventHandler(event: BookingEvent) {
         when (event) {
             is BookingEvent.ChangeSearch -> event.changeSearch()
@@ -22,11 +25,7 @@ class BookingViewModel : ViewModel() {
     }
 
     private fun BookingEvent.ChangeSearch.changeSearch() {
-        _state.update { state ->
-            state.copy(
-                searchField = value
-            )
-        }
+        searchState.value = value
     }
 
     private fun BookingEvent.GetCurrentPosition.getCurrentPosition() {
