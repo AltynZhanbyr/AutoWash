@@ -92,9 +92,7 @@ import com.yandex.mapkit.search.SearchType
 import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.runtime.image.ImageProvider
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 private var mapView: MapView? = null
 private var mapKit: MapKit? = null
@@ -110,6 +108,7 @@ fun MapScreen(
     state: BookingUIState,
     paddingValues: PaddingValues,
     event: (BookingEvent) -> Unit,
+    toggleDialog: (Boolean) -> Unit,
     onBackPress: () -> Unit
 ) {
     val context = LocalContext.current
@@ -246,6 +245,29 @@ fun MapScreen(
         })
 
     LaunchedEffect(state.searchedGeoObjects) {
+        map?.mapObjects?.clear()
+
+        state.searchedGeoObjects.forEach { geoObject ->
+            placemark = map?.mapObjects?.addPlacemark()?.apply {
+                geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
+                setIcon(
+                    ImageProvider.fromResource(context, R.drawable.img_res_final),
+                    IconStyle().apply {
+                        anchor = PointF(0.5f, 1.0f)
+                        scale = 0.03f
+                        zIndex = 10f
+                    }
+                )
+            }
+
+            placemark?.addTapListener { _, _ ->
+                localGeoObject = geoObject
+                true
+            }
+        }
+    }
+
+    LaunchedEffect(state.userPosition) {
         map?.mapObjects?.clear()
 
         state.searchedGeoObjects.forEach { geoObject ->
@@ -498,6 +520,9 @@ fun MapScreen(
                     dropdownList = state.cityMapList,
                     selectedItem = state.selectedMapDropdown
                 ) { value ->
+                    if (value == 1)
+                        Toast.makeText(context, "Карта города в разработке", Toast.LENGTH_SHORT)
+                            .show()
                     event(BookingEvent.SelectCityMapDropdown(value))
                 }
             }
@@ -539,27 +564,6 @@ fun MapScreen(
                         if (location == null) return@addOnSuccessListener
 
                         scope.launch {
-                            val distance = withContext(Dispatchers.Default) {
-                                val distances = state.cityMapList.map { city ->
-                                    Pair(
-                                        city,
-                                        calculateDistance(
-                                            city.cityLatLong.latitude,
-                                            city.cityLatLong.latitude,
-                                            location.latitude,
-                                            location.longitude
-                                        )
-                                    )
-                                }
-
-                                distances.sortedBy { it.second }[0]
-                            }
-
-                            map?.cameraBounds?.latLngBounds = BoundingBox(
-                                distance.first.southWest,
-                                distance.first.northEast
-                            )
-
                             map?.move(
                                 CameraPosition(
                                     Point(location.latitude, location.longitude),
@@ -576,11 +580,9 @@ fun MapScreen(
                                     location.longitude
                                 )
                             )
-
-                            event(BookingEvent.SelectCityMapDropdown(distance.first.idx))
                         }
                     }
-                }
+                } else toggleDialog(true)
             },
             modifier = Modifier
                 .padding(

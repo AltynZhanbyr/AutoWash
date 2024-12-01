@@ -80,6 +80,8 @@ class BookingViewModel(
             val selectedDropdown =
                 state.cityMapList.find { it.idx == value } ?: state.cityMapList[0]
 
+            if (selectedDropdown.cityId == MapCity.Almaty.cityId) return
+
             appPreferences.setCityMap(selectedDropdown.cityId)
 
             state.copy(

@@ -26,8 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -48,7 +51,9 @@ import com.example.autowash.feature.booking.model.BookingEvent
 import com.example.autowash.feature.booking.model.BookingScreens
 import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.feature.booking.model.MapKitListeners
+import com.example.autowash.openAppSettings
 import com.example.autowash.ui.component.BasicButton
+import com.example.autowash.ui.component.NotificationDialog
 import com.example.autowash.ui.component.SelectedAutoWash
 import com.example.autowash.ui.util.AppPreviewTheme
 import com.example.autowash.util.LocalColors
@@ -101,6 +106,22 @@ private fun BookingScreen(
     state: BookingUIState,
     event: (BookingEvent) -> Unit
 ) {
+    var dialogVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    NotificationDialog(
+        visible = dialogVisible,
+        text = stringResource(R.string.lbl_geo_loc_disabled_text),
+        title = stringResource(R.string.lbl_geo_loc_disabled_title),
+        onConfirm = {
+            (context as Activity).openAppSettings()
+            dialogVisible = false
+        },
+        onClose = {
+            dialogVisible = false
+        }
+    )
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -125,13 +146,19 @@ private fun BookingScreen(
                         {
                             event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
                         }
+                    },
+                    toggleDialog = { visibility ->
+                        dialogVisible = visibility
                     }
                 )
 
                 BookingScreens.MainBookingScreen -> MainBookingScreen(
                     state = state,
                     paddingValues = paddingValues,
-                    event = event
+                    event = event,
+                    toggleDialog = { visibility ->
+                        dialogVisible = visibility
+                    }
                 )
             }
         }
@@ -142,7 +169,8 @@ private fun BookingScreen(
 private fun MainBookingScreen(
     state: BookingUIState,
     paddingValues: PaddingValues,
-    event: (BookingEvent) -> Unit
+    event: (BookingEvent) -> Unit,
+    toggleDialog: (Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
 
@@ -171,7 +199,7 @@ private fun MainBookingScreen(
         onResult = {}
     )
 
-    val mapKitListeners = MapKitListeners(context);
+    val mapKitListeners = MapKitListeners(context)
     val searchSessionListener = mapKitListeners.searchListener(
         result = { geoObjects, _ ->
             scope.launch {
@@ -194,22 +222,22 @@ private fun MainBookingScreen(
                 }
 
                 event(BookingEvent.SelectedGeoObject(nearestGeoPair.first, nearestGeoPair.second))
-                event(BookingEvent.SetGeoObjectList(listOf(nearestGeoPair.first)))
             }
         }
     )
+
     LaunchedEffect(Unit) {
         if (!checkLocationPermissions) {
             locationPermission.launch(permissionList.toTypedArray())
         }
     }
 
-    LaunchedEffect(state.searchedGeoObjects) {
+    LaunchedEffect(state.selectedGeoObject) {
         map?.mapObjects?.clear()
 
-        state.searchedGeoObjects.forEach { geoObject ->
+        state.selectedGeoObject?.let { geoObject ->
             placemark = map?.mapObjects?.addPlacemark()?.apply {
-                geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
+                geometry = Point(geoObject.latitude.toDouble(), geoObject.longitude.toDouble())
                 setIcon(
                     ImageProvider.fromResource(context, R.drawable.img_res_final),
                     IconStyle().apply {
@@ -218,12 +246,16 @@ private fun MainBookingScreen(
                         zIndex = 10f
                     }
                 )
+                setText(state.selectedGeoObject.title)
 
                 map?.move(
-                    CameraPosition(geometry, 19f, 0f, 30f)
+                    CameraPosition(geometry, 17f, 0f, 0f)
                 )
             }
         }
+
+        searchSession?.cancel()
+        searchSession = null
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -234,47 +266,6 @@ private fun MainBookingScreen(
                 mapKit?.onStart()
                 mapView?.onStart()
                 scope.launch {
-                    if (state.selectedGeoObject == null) {
-                        val point =
-                            state.selectedMapDropdown?.cityLatLong
-                                ?: state.cityMapList[0].cityLatLong
-                        map?.move(
-                            CameraPosition(
-                                point,
-                                9f,
-                                0f,
-                                0f
-                            )
-                        )
-                    } else {
-                        val point = Point(
-                            state.selectedGeoObject.latitude.toDouble(),
-                            state.selectedGeoObject.longitude.toDouble()
-                        )
-
-                        map?.mapObjects?.addPlacemark()?.apply {
-                            geometry = point
-                            setIcon(
-                                ImageProvider.fromResource(context, R.drawable.img_res_final),
-                                IconStyle().apply {
-                                    anchor = PointF(0.5f, 1.0f)
-                                    scale = 0.03f
-                                    zIndex = 10f
-                                }
-                            )
-                            setText(state.selectedGeoObject.title)
-                        }
-
-                        map?.move(
-                            CameraPosition(
-                                point,
-                                17f,
-                                0f,
-                                0f
-                            )
-                        )
-                    }
-
                     gpsTask.addOnFailureListener { exception ->
                         if (exception is ResolvableApiException) {
                             try {
@@ -312,10 +303,6 @@ private fun MainBookingScreen(
                         }
                     }
                 }
-            }
-            if (event == Lifecycle.Event.ON_STOP) {
-                mapView?.onStop()
-                mapKit?.onStop()
             }
         }
 
@@ -376,6 +363,17 @@ private fun MainBookingScreen(
                             map!!.isRotateGesturesEnabled = false
                             map!!.isScrollGesturesEnabled = false
 
+                            val point = state.selectedMapDropdown?.cityLatLong
+                                ?: state.cityMapList[0].cityLatLong
+                            map?.move(
+                                CameraPosition(
+                                    point,
+                                    10f,
+                                    0f,
+                                    0f
+                                )
+                            )
+
                             mapView!!
                         },
                         update = { view ->
@@ -407,15 +405,9 @@ private fun MainBookingScreen(
                     .height(56.dp)
                     .fillMaxSize(),
                 onClick = {
-                    searchSession?.cancel()
-                    searchSession = searchManager.submit(
-                        "Автомойка",
-                        VisibleRegionUtils.toPolygon(map!!.visibleRegion),
-                        searchOptions,
-                        searchSessionListener
-                    )
-
                     if (checkLocationPermissions) {
+                        searchSession?.cancel()
+
                         val task = LocationServices.getFusedLocationProviderClient(context)
                         task.lastLocation.addOnSuccessListener { location ->
                             if (location == null) return@addOnSuccessListener
@@ -427,7 +419,14 @@ private fun MainBookingScreen(
                                 )
                             )
                         }
-                    }
+
+                        searchSession = searchManager.submit(
+                            "Автомойка",
+                            VisibleRegionUtils.toPolygon(map!!.visibleRegion),
+                            searchOptions,
+                            searchSessionListener
+                        )
+                    } else toggleDialog(true)
                 },
                 containerColor = colors.onPrimary,
                 contentColor = colors.primary,
@@ -470,7 +469,7 @@ private val searchManager =
 
 private val searchOptions = SearchOptions().apply {
     searchTypes = SearchType.BIZ.value
-    resultPageSize = 50
+    resultPageSize = 80
 }
 
 @Preview

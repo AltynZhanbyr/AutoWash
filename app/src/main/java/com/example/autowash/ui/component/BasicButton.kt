@@ -76,7 +76,7 @@ fun BasicButton(
 
 @Preview
 @Composable
-fun BasicButtonPrev() {
+private fun BasicButtonPrev() {
     AppPreviewTheme {
         BasicButton(
             modifier = Modifier
