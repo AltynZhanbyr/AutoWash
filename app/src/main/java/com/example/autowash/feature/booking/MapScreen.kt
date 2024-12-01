@@ -35,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +61,7 @@ import com.example.autowash.ui.component.BasicButton
 import com.example.autowash.ui.component.Dropdown
 import com.example.autowash.ui.component.TextField
 import com.example.autowash.util.LocalColors
+import com.example.autowash.util.calculateDistance
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -84,6 +86,7 @@ import com.yandex.mapkit.search.Session
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.runtime.image.ImageProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private var mapView: MapView? = null
@@ -104,6 +107,8 @@ fun MapScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val colors = LocalColors.current
+
+    val scope = rememberCoroutineScope()
 
     var dialogVisibility by remember { mutableStateOf(false) }
     var lastReqState by remember { mutableStateOf("") }
@@ -349,9 +354,13 @@ fun MapScreen(
                         onSearch = {
                             searchSession?.cancel()
                             map?.let { mapValue ->
+                                val point =
+                                    state.selectedMapDropdown?.cityLatLong
+                                        ?: state.cityMapList[0].cityLatLong
+
                                 mapValue.move(
                                     CameraPosition(
-                                        Point(51.169392, 71.449074),
+                                        point,
                                         9f,
                                         0f,
                                         0f
@@ -402,6 +411,11 @@ fun MapScreen(
 
         IconButton(
             onClick = {
+                val animation = Animation(
+                    Animation.Type.SMOOTH,
+                    1.5f
+                )
+
                 gpsTask.addOnFailureListener { exception ->
                     if (exception is ResolvableApiException) {
                         try {
@@ -428,32 +442,50 @@ fun MapScreen(
                 if (checkLocationPermissions) {
                     val task = LocationServices.getFusedLocationProviderClient(context)
                     task.lastLocation.addOnSuccessListener { location ->
-                        location?.let {
-                            event(
-                                BookingEvent.GetCurrentPosition(
-                                    location.latitude,
-                                    location.longitude
-                                )
+                        scope.launch {
+                            val distance = withContext(Dispatchers.Default) {
+                                val distances = state.cityMapList.map { city ->
+                                    Pair(
+                                        city,
+                                        calculateDistance(
+                                            city.cityLatLong.latitude,
+                                            city.cityLatLong.latitude,
+                                            location.latitude,
+                                            location.longitude
+                                        )
+                                    )
+                                }
+
+                                distances.sortedBy { it.second }[0]
+                            }
+
+                            map?.cameraBounds?.latLngBounds = BoundingBox(
+                                distance.first.southWest,
+                                distance.first.northEast
                             )
+
+                            location?.let {
+                                map?.move(
+                                    CameraPosition(
+                                        Point(location.latitude, location.longitude),
+                                        20f,
+                                        0f,
+                                        30.0f
+                                    ),
+                                    animation
+                                ) {}
+
+                                event(
+                                    BookingEvent.GetCurrentPosition(
+                                        location.latitude,
+                                        location.longitude
+                                    )
+                                )
+
+                                event(BookingEvent.SelectCityMapDropdown(distance.first.idx))
+                            }
                         }
                     }
-                }
-
-                if (state.userPosition != null) {
-                    val animation = Animation(
-                        Animation.Type.SMOOTH,
-                        1.5f
-                    )
-
-                    map?.move(
-                        CameraPosition(
-                            Point(state.userPosition.latitude, state.userPosition.longitude),
-                            20f,
-                            0f,
-                            30.0f
-                        ),
-                        animation
-                    ) {}
                 }
             },
             modifier = Modifier
