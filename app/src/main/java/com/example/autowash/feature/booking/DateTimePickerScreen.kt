@@ -84,6 +84,7 @@ fun DateTimePickerScreen(
     ) {
         IconButton(
             onClick = {
+                event(BookingEvent.ClearDateTimeData)
                 event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
             },
             modifier = Modifier
@@ -98,7 +99,7 @@ fun DateTimePickerScreen(
             )
         }
 
-        if (state.selectedTime != null && state.selectedDay != null) {
+        if (state.selectedTime == null || state.selectedDay == null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -165,7 +166,7 @@ fun DateTimePickerScreen(
             }
         }
 
-        if (state.selectedTime == null && state.selectedDay == null) {
+        if (state.selectedTime != null && state.selectedDay != null) {
             Column(
                 modifier = Modifier
                     .align(Alignment.Center),
@@ -182,13 +183,13 @@ fun DateTimePickerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    DateCircle(calendar = DaysCalendar("пн", 15)) {
+                    DateCircle(calendar = state.selectedDay) {
 
                     }
 
                     TimeRoundedBox(
                         modifier = Modifier
-                            .width(80.dp), time = "15"
+                            .width(80.dp), time = state.selectedTime
                     ) {
 
                     }

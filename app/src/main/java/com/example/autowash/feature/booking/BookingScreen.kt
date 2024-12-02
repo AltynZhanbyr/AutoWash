@@ -451,9 +451,10 @@ private fun MainBookingScreen(
                 modifier = Modifier
                     .fillMaxWidth(),
                 autoWashName = state.selectedGeoObject?.title.orEmpty(),
-                distance = state.selectedGeoObject?.distance ?: 0.0
+                distance = state.selectedGeoObject?.distance ?: 0.0,
+                enabled = state.selectedGeoObject != null
             ) {
-
+                event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.ScheduleScreen))
             }
         }
     }

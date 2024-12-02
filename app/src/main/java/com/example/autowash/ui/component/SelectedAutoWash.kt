@@ -29,6 +29,7 @@ fun SelectedAutoWash(
     modifier: Modifier = Modifier,
     autoWashName: String,
     distance: Double,
+    enabled:Boolean = true,
     onBookingClick: () -> Unit
 ) {
     val localColors = LocalColors.current
@@ -71,7 +72,8 @@ fun SelectedAutoWash(
                 onClick = onBookingClick,
                 contentPadding = PaddingValues(vertical = 0.dp, horizontal = 0.dp),
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
+                    .align(Alignment.CenterHorizontally),
+                enabled = enabled
             ) {
                 Text(
                     text = stringResource(R.string.lbl_booking_time),
