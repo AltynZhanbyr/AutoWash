@@ -24,6 +24,15 @@ android {
         buildConfigField("String", "YANDEX_MAP_API", getProperty("yandex_map_api").escaped())
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = getProperty("alias")
+            keyPassword = getProperty("alias_password")
+            storeFile = file(getProperty("keystore_path"))
+            storePassword = getProperty("keystore_password")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -31,6 +40,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
