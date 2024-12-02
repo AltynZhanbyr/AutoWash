@@ -10,6 +10,8 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -43,7 +45,9 @@ class MainActivity : ComponentActivity() {
                                 .padding(innerPadding)
                                 .fillMaxSize(),
                             startDestination = Main,
-                            navController = navHostController
+                            navController = navHostController,
+                            enterTransition = { EnterTransition.None },
+                            exitTransition = { ExitTransition.None },
                         ) {
                             mainScreen()
                             bookingScreen()
