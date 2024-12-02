@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +21,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,9 +57,9 @@ fun MainScreen() {
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
                 Image(
-                    painter = painterResource(R.drawable.ic_app_png),
+                    painter = painterResource(R.drawable.ic_app_logo_svg),
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .size(300.dp)
                 )
@@ -77,17 +76,18 @@ fun MainScreen() {
 
                 BasicButton(
                     modifier = Modifier
-                        .width(220.dp),
+                        .fillMaxWidth()
+                        .height(56.dp),
                     text = stringResource(R.string.lbl_booking_now),
                     containerColor = colors.primary,
                     contentColor = colors.onBackground,
                     textStyle = TextStyle(
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.W400
                     ),
                     paddingValues = PaddingValues(
-                        vertical = 4.dp,
-                        horizontal = 10.dp
+                        vertical = 10.dp,
+                        horizontal = 20.dp
                     ),
                     onClick = {
                         localNavHost.navigateToBookingScreen()
