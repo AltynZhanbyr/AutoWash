@@ -1,6 +1,9 @@
 package com.example.autowash.feature.booking
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -73,9 +77,8 @@ fun DateTimePickerScreen(
     val colors = LocalColors.current
     val gridState = rememberLazyGridState()
 
-    var isNumberShowUp by rememberSaveable {
-        mutableStateOf(false)
-    }
+    var isNumberShowUp by rememberSaveable { mutableStateOf(false) }
+    var isBooked by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(state.selectedBookingScreen.isScheduleScreen()) {
         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
@@ -172,7 +175,7 @@ fun DateTimePickerScreen(
             }
         }
 
-        if (!isNumberShowUp && state.selectedTime != null && state.selectedDay != null) {
+        if (!isNumberShowUp && !isBooked && state.selectedTime != null && state.selectedDay != null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -190,11 +193,11 @@ fun DateTimePickerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    DateCircle(calendar = state.selectedDay ?: DaysCalendar("пн", 11)) {}
+                    DateCircle(calendar = state.selectedDay) {}
 
                     TimeRoundedBox(
                         modifier = Modifier
-                            .width(80.dp), time = state.selectedTime ?: "11"
+                            .width(80.dp), time = state.selectedTime
                     ) {}
                 }
 
@@ -245,13 +248,71 @@ fun DateTimePickerScreen(
                     singleLine = true,
                     maxLines = 1
                 )
+
+                Button(
+                    onClick = {
+                        isNumberShowUp = false
+                        isBooked = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = colors.primary,
+                        contentColor = colors.onBackground,
+                    ),
+                    shape = RoundedCornerShape(15.dp),
+                    enabled = state.phoneNumber.length >= 10
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Получить бронь",
+                            fontSize = 18.sp,
+                        )
+                    }
+                }
             }
         }
 
+        AnimatedVisibility(
+            visible = isBooked,
+            modifier = Modifier
+                .height(250.dp)
+                .align(Alignment.Center),
+            enter = scaleIn(),
+            exit = scaleOut()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = colors.onPrimary,
+                    modifier = Modifier
+                        .size(200.dp)
+                )
+
+                Text(
+                    text = "Бронь успешно заверешена!",
+                    fontSize = 18.sp,
+                    color = colors.onPrimary
+                )
+            }
+        }
 
         Button(
             onClick = {
-                if (isNumberShowUp)
+                if (isBooked)
+                    event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
+                else if (isNumberShowUp)
                     isNumberShowUp = false
                 else if (state.selectedTime != null && state.selectedDay != null)
                     event(BookingEvent.ClearDateTimeData)
