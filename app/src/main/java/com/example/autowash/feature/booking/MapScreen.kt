@@ -133,15 +133,18 @@ fun MapScreen(
     val clientSettings = LocationServices.getSettingsClient(context)
     val gpsTask = clientSettings.checkLocationSettings(builder.build())
 
-    val checkLocationPermissions = ContextCompat.checkSelfPermission(
-        context,
-        android.Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(
-        context,
-        android.Manifest.permission.ACCESS_COARSE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
+    var checkLocationPermissions by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
 
     val mapKitListeners = MapKitListeners(context)
 
@@ -222,6 +225,15 @@ fun MapScreen(
     MapScreenLifecycleObserver(
         lifecycleOwner = lifecycleOwner,
         onStart = {
+            checkLocationPermissions = ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
             if (mapKit == null) mapKit = MapKitFactory.getInstance()
 
             mapKit?.onStart()
@@ -392,6 +404,8 @@ fun MapScreen(
                     state.selectedMapDropdown?.cityLatLong ?: state.cityMapList[0].cityLatLong
                 val nePoint = state.selectedMapDropdown?.northEast ?: state.cityMapList[0].northEast
                 val swPoint = state.selectedMapDropdown?.southWest ?: state.cityMapList[0].southWest
+
+                map!!.isRotateGesturesEnabled = false
 
                 map?.cameraBounds?.latLngBounds = BoundingBox(
                     swPoint,

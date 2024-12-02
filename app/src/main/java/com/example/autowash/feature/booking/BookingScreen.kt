@@ -195,19 +195,23 @@ private fun MainBookingScreen(
     val clientSettings = LocationServices.getSettingsClient(context)
     val gpsTask = clientSettings.checkLocationSettings(builder.build())
 
-    val checkLocationPermissions = ContextCompat.checkSelfPermission(
-        context,
-        android.Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(
-        context,
-        android.Manifest.permission.ACCESS_COARSE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
     val locationPermission = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = {}
     )
+
+    var checkLocationPermissions by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
 
     val mapKitListeners = MapKitListeners(context)
     val searchSessionListener = mapKitListeners.searchListener(
@@ -271,6 +275,15 @@ private fun MainBookingScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
+                checkLocationPermissions = ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+                        || ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+
                 if (mapKit == null) mapKit = MapKitFactory.getInstance()
 
                 mapKit?.onStart()
@@ -351,7 +364,7 @@ private fun MainBookingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(300.dp)
-                    .clip(shape = RoundedCornerShape(5.dp))
+                    .clip(shape = RoundedCornerShape(15.dp))
                     .background(color = colors.background),
             ) {
                 Column(
@@ -364,7 +377,7 @@ private fun MainBookingScreen(
                             .fillMaxWidth()
                             .height(250.dp)
                             .padding(5.dp)
-                            .clip(shape = RoundedCornerShape(5.dp)),
+                            .clip(shape = RoundedCornerShape(15.dp)),
                         factory = { context ->
                             mapView = MapView(context)
                             map = mapView!!.mapWindow.map

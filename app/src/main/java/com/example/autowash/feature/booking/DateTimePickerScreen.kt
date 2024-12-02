@@ -217,7 +217,8 @@ fun DateTimePickerScreen(
         if (isNumberShowUp) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.Center),
+                    .align(Alignment.Center)
+                    .padding(horizontal = 25.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(50.dp)
             ) {

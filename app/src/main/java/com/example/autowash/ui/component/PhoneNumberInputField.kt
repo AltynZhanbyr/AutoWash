@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.autowash.util.LocalColors
@@ -63,7 +65,8 @@ fun PhoneNumberInputField(
     val textStyle = LocalTextStyle.current
         .copy(
             fontSize = 24.sp,
-            fontWeight = FontWeight.W600
+            fontWeight = FontWeight.W600,
+            textAlign = TextAlign.Justify
         )
 
     Column {
@@ -92,13 +95,16 @@ fun PhoneNumberInputField(
             decorationBox = @Composable { innerTextField ->
                 TextFieldDefaults.DecorationBox(
                     contentPadding = PaddingValues(
-                        start = 30.dp,
-                        top = 15.dp,
-                        bottom = 15.dp,
+                        start = 20.dp,
+                        top = 6.dp,
+                        bottom = 6.dp,
                         end = 30.dp
                     ),
                     innerTextField = {
-                        Box {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
                             if (value.isBlank())
                                 Text(
                                     text = placeholder,
