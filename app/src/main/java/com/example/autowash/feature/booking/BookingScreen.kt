@@ -253,7 +253,7 @@ private fun MainBookingScreen(
             placemark = map?.mapObjects?.addPlacemark()?.apply {
                 geometry = Point(geoObject.latitude.toDouble(), geoObject.longitude.toDouble())
                 setIcon(
-                    ImageProvider.fromResource(context, R.drawable.img_res_final),
+                    ImageProvider.fromResource(context, R.drawable.img_car_wash),
                     IconStyle().apply {
                         anchor = PointF(0.5f, 1.0f)
                         scale = 0.03f
@@ -468,10 +468,14 @@ private fun MainBookingScreen(
                     .fillMaxWidth(),
                 autoWashName = state.selectedGeoObject?.title.orEmpty(),
                 distance = state.selectedGeoObject?.distance ?: 0.0,
-                enabled = state.selectedGeoObject != null
             ) {
-                event(BookingEvent.ClearDateTimeData)
-                event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.ScheduleScreen))
+                if (state.selectedGeoObject == null)
+                    Toast.makeText(context, "Сперва выберите место для мойки", Toast.LENGTH_SHORT)
+                        .show()
+                else {
+                    event(BookingEvent.ClearDateTimeData)
+                    event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.ScheduleScreen))
+                }
             }
         }
     }

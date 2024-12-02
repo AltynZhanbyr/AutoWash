@@ -263,7 +263,7 @@ fun MapScreen(
             placemark = map?.mapObjects?.addPlacemark()?.apply {
                 geometry = geoObject.geometry[0].point ?: Point(0.0, 0.0)
                 setIcon(
-                    ImageProvider.fromResource(context, R.drawable.img_res_final),
+                    ImageProvider.fromResource(context, R.drawable.img_car_wash),
                     IconStyle().apply {
                         anchor = PointF(0.5f, 1.0f)
                         scale = 0.03f
@@ -629,7 +629,7 @@ private val permissionList = listOf(
 )
 
 private val locationRequest = LocationRequest.Builder(
-    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+    Priority.PRIORITY_HIGH_ACCURACY,
     10_000L
 )
     .setMinUpdateIntervalMillis(5_000L)
