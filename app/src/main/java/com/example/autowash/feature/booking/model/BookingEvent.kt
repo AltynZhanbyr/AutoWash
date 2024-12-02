@@ -17,4 +17,5 @@ sealed interface BookingEvent {
     data class SelectTime(val value: String) : BookingEvent
 
     data object ClearDateTimeData : BookingEvent
+    data class ChangePhoneNumber(val value: String) : BookingEvent
 }

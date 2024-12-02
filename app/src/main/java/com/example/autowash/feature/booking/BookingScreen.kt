@@ -125,10 +125,13 @@ private fun BookingScreen(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = LocalColors.current.primary)
     ) { paddingValues ->
 
         AnimatedContent(
             targetState = state.selectedBookingScreen,
+            modifier = Modifier
+                .background(color = LocalColors.current.primary),
             label = "Booking screen state"
         ) { targetState ->
             when (targetState) {
@@ -454,6 +457,7 @@ private fun MainBookingScreen(
                 distance = state.selectedGeoObject?.distance ?: 0.0,
                 enabled = state.selectedGeoObject != null
             ) {
+                event(BookingEvent.ClearDateTimeData)
                 event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.ScheduleScreen))
             }
         }
@@ -477,7 +481,7 @@ private val searchManager =
 
 private val searchOptions = SearchOptions().apply {
     searchTypes = SearchType.BIZ.value
-    resultPageSize = 80
+    resultPageSize = 150
 }
 
 @Preview

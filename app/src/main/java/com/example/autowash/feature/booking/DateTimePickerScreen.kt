@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +27,11 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,7 +58,9 @@ import com.example.autowash.feature.booking.model.BookingEvent
 import com.example.autowash.feature.booking.model.BookingScreens
 import com.example.autowash.feature.booking.model.BookingUIState
 import com.example.autowash.ui.component.BasicButton
+import com.example.autowash.ui.component.PhoneNumberInputField
 import com.example.autowash.ui.util.AppPreviewTheme
+import com.example.autowash.ui.util.MaskTransformation
 import com.example.autowash.util.LocalColors
 
 @Composable
@@ -71,7 +78,6 @@ fun DateTimePickerScreen(
     }
 
     BackHandler(state.selectedBookingScreen.isScheduleScreen()) {
-        event(BookingEvent.ClearDateTimeData)
         event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
     }
 
@@ -80,11 +86,11 @@ fun DateTimePickerScreen(
             .padding(paddingValues)
             .fillMaxSize()
             .background(color = colors.primary)
+            .imePadding()
             .padding(24.dp)
     ) {
         IconButton(
             onClick = {
-                event(BookingEvent.ClearDateTimeData)
                 event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
             },
             modifier = Modifier
@@ -166,9 +172,10 @@ fun DateTimePickerScreen(
             }
         }
 
-        if (state.selectedTime != null && state.selectedDay != null) {
+        if (!isNumberShowUp && state.selectedTime != null && state.selectedDay != null) {
             Column(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(25.dp)
@@ -183,16 +190,12 @@ fun DateTimePickerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    DateCircle(calendar = state.selectedDay) {
-
-                    }
+                    DateCircle(calendar = state.selectedDay ?: DaysCalendar("пн", 11)) {}
 
                     TimeRoundedBox(
                         modifier = Modifier
-                            .width(80.dp), time = state.selectedTime
-                    ) {
-
-                    }
+                            .width(80.dp), time = state.selectedTime ?: "11"
+                    ) {}
                 }
 
                 BasicButton(
@@ -208,42 +211,81 @@ fun DateTimePickerScreen(
                     containerColor = colors.background,
                     paddingValues = PaddingValues(horizontal = 25.dp, vertical = 15.dp)
                 )
+            }
+        }
 
-                IconButton(
-                    onClick = {
-                        event(BookingEvent.ClearDateTimeData)
-                        isNumberShowUp = false
+        if (isNumberShowUp) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(50.dp)
+            ) {
+                Text(
+                    text = "Ваш номер телефона",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.W600,
+                        color = colors.onBackground
+                    )
+                )
 
-                    },
+                PhoneNumberInputField(
                     modifier = Modifier
-                        .padding(horizontal = 50.dp)
-                        .fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = null,
-                            tint = colors.background,
-                            modifier = Modifier
-                                .size(34.dp)
-                        )
-
-                        Text(
-                            text = "Назад",
-                            fontSize = 18.sp,
-                            color = colors.background
-                        )
-                    }
-                }
+                        .fillMaxWidth(),
+                    value = state.phoneNumber,
+                    onValueChange = { value ->
+                        event(BookingEvent.ChangePhoneNumber(value))
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone
+                    ),
+                    visualTransformation = MaskTransformation(),
+                    singleLine = true,
+                    maxLines = 1
+                )
             }
         }
 
 
+        Button(
+            onClick = {
+                if (isNumberShowUp)
+                    isNumberShowUp = false
+                else if (state.selectedTime != null && state.selectedDay != null)
+                    event(BookingEvent.ClearDateTimeData)
+                else if (state.selectedTime == null && state.selectedDay == null)
+                    event(BookingEvent.ChangeBookingSelectedScreen(BookingScreens.MainBookingScreen))
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .align(Alignment.BottomCenter),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.background,
+                contentColor = colors.onBackground,
+            ),
+            shape = RoundedCornerShape(15.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(34.dp)
+                )
+
+                Text(
+                    text = "Назад",
+                    fontSize = 18.sp,
+                )
+            }
+        }
     }
 }
 

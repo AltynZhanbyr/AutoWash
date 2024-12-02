@@ -22,7 +22,8 @@ data class BookingUIState(
     val daysCalendar: List<DaysCalendar> = getCalendar(10),
     val selectedDay: DaysCalendar? = null,
     val times: List<String> = (10..21).map { it.toString() },
-    val selectedTime: String? = null
+    val selectedTime: String? = null,
+    val phoneNumber: String = ""
 )
 
 enum class BookingScreens {

@@ -43,6 +43,7 @@ class BookingViewModel(
             BookingEvent.ClearDateTimeData -> clearDateTimeData()
             is BookingEvent.SelectDate -> event.selectDate()
             is BookingEvent.SelectTime -> event.selectTime()
+            is BookingEvent.ChangePhoneNumber -> event.changePhoneNumber()
         }
     }
 
@@ -50,7 +51,8 @@ class BookingViewModel(
         _state.update { state ->
             state.copy(
                 selectedTime = null,
-                selectedDay = null
+                selectedDay = null,
+                phoneNumber = ""
             )
         }
     }
@@ -137,6 +139,14 @@ class BookingViewModel(
                     )
                 )
             }
+        }
+    }
+
+    private fun BookingEvent.ChangePhoneNumber.changePhoneNumber() {
+        _state.update { state ->
+            state.copy(
+                phoneNumber = value
+            )
         }
     }
 }
