@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<resources>
+    <string name="app_name" translatable="false">AUTOWASH</string>
+
+    <string name="lbl_booking_now">Забронировать время сейчас</string>
+    <string name="lbl_booking_time">Забронировать время</string>
+    <string name="lbl_cancel">Отмена</string>
+    <string name="lbl_choose">Выбрать</string>
+    <string name="lbl_choose_closest_car_wash">Выберите автомойку\nблизкую к Вам</string>
+    <string name="lbl_choose_day_and_time">Выбери день и время</string>
+    <string name="lbl_close_to_you">К вам близко:</string>
+    <string name="lbl_confirm">Принять</string>
+    <string name="lbl_geo_loc_disabled_text">Чтобы приложение могло определить ваше местоположение, включите геолокацию в настройках устройства.</string>
+    <string name="lbl_geo_loc_disabled_title">Геолокация отключена</string>
+    <string name="lbl_greetings_msg">Привет! Хочешь помыть свою машину?</string>
+    <string name="lbl_i_am_booking">Бронирую</string>
+    <string name="lbl_search">Поиск</string>
+    <string name="lbl_you_phone_number">Ваш номер телефона</string>
+
+    <string name="placeholder_meters_away">%.1f метров от вас</string>
+</resources>
