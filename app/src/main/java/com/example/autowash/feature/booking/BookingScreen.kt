@@ -1,6 +1,7 @@
 package com.example.autowash.feature.booking
 
 import android.app.Activity
+import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.PointF
@@ -200,17 +201,8 @@ private fun MainBookingScreen(
         onResult = {}
     )
 
-    var checkLocationPermissions by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        )
+    var showNearest by remember {
+        mutableStateOf(false)
     }
 
     val mapKitListeners = MapKitListeners(context)
@@ -235,97 +227,68 @@ private fun MainBookingScreen(
                     }.sortedBy { it.second }[0]
                 }
 
+                map?.mapObjects?.clear()
+
+                placemark = map?.mapObjects?.addPlacemark()?.apply {
+                    geometry = nearestGeoPair.first.geometry[0].point ?: Point(0.0, 0.0)
+                    setIcon(
+                        ImageProvider.fromResource(context, R.drawable.img_car_wash),
+                        IconStyle().apply {
+                            anchor = PointF(0.5f, 1.0f)
+                            scale = 0.03f
+                            zIndex = 10f
+                        }
+                    )
+                    setText(nearestGeoPair.first.name.orEmpty())
+
+                    map?.move(
+                        CameraPosition(geometry, 17f, 0f, 0f)
+                    )
+                }
+
+                searchSession?.cancel()
+                searchSession = null
+
                 event(BookingEvent.SelectedGeoObject(nearestGeoPair.first, nearestGeoPair.second))
             }
         }
     )
 
     LaunchedEffect(Unit) {
-        if (!checkLocationPermissions) {
+        if (!checkSelfLLocationPermission(context)) {
             locationPermission.launch(permissionList.toTypedArray())
         }
-    }
-
-    LaunchedEffect(state.selectedGeoObject) {
-        map?.mapObjects?.clear()
-
-        state.selectedGeoObject?.let { geoObject ->
-            placemark = map?.mapObjects?.addPlacemark()?.apply {
-                geometry = Point(geoObject.latitude.toDouble(), geoObject.longitude.toDouble())
-                setIcon(
-                    ImageProvider.fromResource(context, R.drawable.img_car_wash),
-                    IconStyle().apply {
-                        anchor = PointF(0.5f, 1.0f)
-                        scale = 0.03f
-                        zIndex = 10f
-                    }
-                )
-                setText(state.selectedGeoObject.title)
-
-                map?.move(
-                    CameraPosition(geometry, 17f, 0f, 0f)
-                )
-            }
-        }
-
-        searchSession?.cancel()
-        searchSession = null
     }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
-                checkLocationPermissions = ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-                        || ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
+                state.selectedGeoObject?.let { geoObject ->
+                    map?.mapObjects?.clear()
+
+                    placemark = map?.mapObjects?.addPlacemark()?.apply {
+                        geometry =
+                            Point(geoObject.latitude.toDouble(), geoObject.longitude.toDouble())
+                        setIcon(
+                            ImageProvider.fromResource(context, R.drawable.img_car_wash),
+                            IconStyle().apply {
+                                anchor = PointF(0.5f, 1.0f)
+                                scale = 0.03f
+                                zIndex = 10f
+                            }
+                        )
+                        setText(geoObject.title)
+
+                        map?.move(
+                            CameraPosition(geometry, 17f, 0f, 0f)
+                        )
+                    }
+                }
 
                 if (mapKit == null) mapKit = MapKitFactory.getInstance()
 
                 mapKit?.onStart()
                 mapView?.onStart()
-                scope.launch {
-                    gpsTask.addOnFailureListener { exception ->
-                        if (exception is ResolvableApiException) {
-                            try {
-                                exception.startResolutionForResult(
-                                    context as Activity,
-                                    101
-                                )
-                            } catch (sendEx: IntentSender.SendIntentException) {
-                                Toast.makeText(
-                                    context,
-                                    exception.message ?: "Unexpected exception",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        } else {
-                            Toast.makeText(
-                                context,
-                                exception.message ?: "Unexpected exception",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
-                    if (checkLocationPermissions) {
-                        val task = LocationServices.getFusedLocationProviderClient(context)
-                        task.lastLocation.addOnSuccessListener { location ->
-                            if (location == null) return@addOnSuccessListener
-
-                            event(
-                                BookingEvent.GetCurrentPosition(
-                                    location.latitude,
-                                    location.longitude
-                                )
-                            )
-                        }
-                    }
-                }
             }
         }
 
@@ -333,6 +296,19 @@ private fun MainBookingScreen(
 
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(showNearest) {
+        if (showNearest && state.userPosition != null) {
+            searchSession = searchManager.submit(
+                "Автомойка",
+                VisibleRegionUtils.toPolygon(map!!.visibleRegion),
+                searchOptions,
+                searchSessionListener
+            )
+
+            showNearest = false
         }
     }
 
@@ -428,13 +404,51 @@ private fun MainBookingScreen(
                     .height(56.dp)
                     .fillMaxSize(),
                 onClick = {
-                    if (checkLocationPermissions) {
+                    gpsTask.addOnFailureListener { exception ->
+                        if (exception is ResolvableApiException) {
+                            try {
+                                exception.startResolutionForResult(
+                                    context as Activity,
+                                    101
+                                )
+                            } catch (sendEx: IntentSender.SendIntentException) {
+                                Toast.makeText(
+                                    context,
+                                    exception.message ?: "Unexpected exception",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                exception.message ?: "Unexpected exception",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    if (checkSelfLLocationPermission(context)) {
                         searchSession?.cancel()
+
+                        val point =
+                            state.selectedMapDropdown?.cityLatLong
+                                ?: state.cityMapList[0].cityLatLong
+
+                        map?.mapObjects?.clear()
+
+                        map?.move(
+                            CameraPosition(
+                                point,
+                                9f,
+                                0f,
+                                0f
+                            )
+                        )
 
                         val task = LocationServices.getFusedLocationProviderClient(context)
                         task.lastLocation.addOnSuccessListener { location ->
                             if (location == null) return@addOnSuccessListener
-
+                            showNearest = true
                             event(
                                 BookingEvent.GetCurrentPosition(
                                     location.latitude,
@@ -442,13 +456,6 @@ private fun MainBookingScreen(
                                 )
                             )
                         }
-
-                        searchSession = searchManager.submit(
-                            "Автомойка",
-                            VisibleRegionUtils.toPolygon(map!!.visibleRegion),
-                            searchOptions,
-                            searchSessionListener
-                        )
                     } else toggleDialog(true)
                 },
                 containerColor = colors.onPrimary,
@@ -499,6 +506,17 @@ private val searchManager =
 private val searchOptions = SearchOptions().apply {
     searchTypes = SearchType.BIZ.value
     resultPageSize = 150
+}
+
+private fun checkSelfLLocationPermission(context: Context): Boolean {
+    return ContextCompat.checkSelfPermission(
+        context,
+        android.Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+            || ContextCompat.checkSelfPermission(
+        context,
+        android.Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
 }
 
 @Preview
